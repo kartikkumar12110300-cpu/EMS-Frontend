@@ -3,13 +3,15 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://github.com/kartikkumar12110300-cpu/EMS-Frontend",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+  "start": "react-scripts start",
+  "build": "react-scripts build",
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d build"
   },
   "dependencies": {
+    "gh-pages": "^6.3.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
