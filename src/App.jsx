@@ -1,34 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "ems-employees";
-const defaultEmployees = [
-  { id: 1, name: "Rahul", department: "IT", salary: 50000 },
-  { id: 2, name: "Priya", department: "HR", salary: 40000 },
-];
-
-const loadEmployees = () => {
-  try {
-    const savedEmployees = localStorage.getItem(STORAGE_KEY);
-    return savedEmployees ? JSON.parse(savedEmployees) : defaultEmployees;
-  } catch {
-    return defaultEmployees;
-  }
-};
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://ems-backend-9n7x.onrender.com/employees";
 
 function App() {
-  const [employees, setEmployees] = useState(loadEmployees);
+  const [employees, setEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     department: "",
     salary: "",
   });
 
+  const getEmployees = async () => {
+    setError("");
+
+    try {
+      const response = await fetch(API_URL);
+      if (!response.ok) throw new Error("Unable to load employees.");
+      setEmployees(await response.json());
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(employees));
-  }, [employees]);
+    getEmployees();
+  }, []);
 
   const handleChange = (event) => {
     setFormData({ ...formData, [event.target.name]: event.target.value });
@@ -39,27 +44,40 @@ function App() {
     setFormData({ name: "", department: "", salary: "" });
   };
 
-  const addEmployee = (event) => {
-    event.preventDefault();
-    const nextId =
-      employees.length === 0
-        ? 1
-        : Math.max(...employees.map((employee) => employee.id)) + 1;
+  const employeePayload = () => ({
+    name: formData.name.trim(),
+    department: formData.department.trim(),
+    salary: Number(formData.salary),
+  });
 
-    setEmployees([
-      ...employees,
-      {
-        id: nextId,
-        name: formData.name.trim(),
-        department: formData.department.trim(),
-        salary: Number(formData.salary),
-      },
-    ]);
-    resetForm();
+  const addEmployee = async (event) => {
+    event.preventDefault();
+    setError("");
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(employeePayload()),
+      });
+      if (!response.ok) throw new Error("Unable to add employee.");
+      resetForm();
+      await getEmployees();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   };
 
-  const deleteEmployee = (id) => {
-    setEmployees(employees.filter((employee) => employee.id !== id));
+  const deleteEmployee = async (id) => {
+    setError("");
+
+    try {
+      const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Unable to delete employee.");
+      await getEmployees();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   };
 
   const openEdit = (employee) => {
@@ -71,23 +89,23 @@ function App() {
     });
   };
 
-  const updateEmployee = (event) => {
+  const updateEmployee = async (event) => {
     event.preventDefault();
     if (!selectedEmployee) return;
+    setError("");
 
-    setEmployees(
-      employees.map((employee) =>
-        employee.id === selectedEmployee.id
-          ? {
-              ...employee,
-              name: formData.name.trim(),
-              department: formData.department.trim(),
-              salary: Number(formData.salary),
-            }
-          : employee,
-      ),
-    );
-    resetForm();
+    try {
+      const response = await fetch(`${API_URL}/${selectedEmployee.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(employeePayload()),
+      });
+      if (!response.ok) throw new Error("Unable to update employee.");
+      resetForm();
+      await getEmployees();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   };
 
   const departments = useMemo(() => {
@@ -116,6 +134,8 @@ function App() {
   return (
     <main className="container">
       <h1>Employee Management System</h1>
+
+      {error && <p className="status-message error-message">{error}</p>}
 
       <div className="controls">
         <input
@@ -180,28 +200,32 @@ function App() {
         )}
       </form>
 
-      <div className="employee-grid">
-        {filteredEmployees.map((employee) => (
-          <div key={employee.id} className="card">
-            <h3>{employee.name}</h3>
-            <p>Department: {employee.department}</p>
-            <p>Salary: ₹{employee.salary}</p>
-            <button
-              className="delete-btn"
-              onClick={() => openEdit(employee)}
-              style={{ background: "#2563eb" }}
-            >
-              Edit
-            </button>
-            <button
-              className="delete-btn"
-              onClick={() => deleteEmployee(employee.id)}
-            >
-              Delete
-            </button>
-          </div>
-        ))}
-      </div>
+      {loading ? (
+        <p className="status-message">Loading employees...</p>
+      ) : (
+        <div className="employee-grid">
+          {filteredEmployees.map((employee) => (
+            <div key={employee.id} className="card">
+              <h3>{employee.name}</h3>
+              <p>Department: {employee.department}</p>
+              <p>Salary: ₹{employee.salary}</p>
+              <button
+                className="delete-btn"
+                onClick={() => openEdit(employee)}
+                style={{ background: "#2563eb" }}
+              >
+                Edit
+              </button>
+              <button
+                className="delete-btn"
+                onClick={() => deleteEmployee(employee.id)}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

@@ -58,8 +58,20 @@ h1 { text-align: center; margin-bottom: 25px; color: #222; }
   color: #111;
 }
 
+.status-message {
+  margin-bottom: 18px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #e0ecff;
+  color: #1e3a8a;
+}
+
+.error-message {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
 /* Edit/Cancel styling */
 .controls + form .delete-btn {
   background: #f43f5e;
 }
-
