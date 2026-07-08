@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 
-// const API_URL =
-//   import.meta.env.VITE_API_URL ||
-//   "https://ems-backend-9n7x.onrender.com/employees";
-
-
-const API_URL = "http://localhost:4500/employees";
-
-
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://ems-backend-9n7x.onrender.com/employees";
 
 function App() {
   const [employees, setEmployees] = useState([]);
@@ -73,11 +68,11 @@ function App() {
     }
   };
 
-  const deleteEmployee = async (_id) => {
+  const deleteEmployee = async (id) => {
     setError("");
 
     try {
-      const response = await fetch(`${API_URL}/${_id}`, { method: "DELETE" });
+      const response = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
       if (!response.ok) throw new Error("Unable to delete employee.");
       await getEmployees();
     } catch (requestError) {
@@ -100,7 +95,7 @@ function App() {
     setError("");
 
     try {
-      const response = await fetch(`${API_URL}/${selectedEmployee._id}`, {
+      const response = await fetch(`${API_URL}/${selectedEmployee.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(employeePayload()),
@@ -210,7 +205,7 @@ function App() {
       ) : (
         <div className="employee-grid">
           {filteredEmployees.map((employee) => (
-            <div key={employee._id} className="card">
+            <div key={employee.id} className="card">
               <h3>{employee.name}</h3>
               <p>Department: {employee.department}</p>
               <p>Salary: ₹{employee.salary}</p>
@@ -223,7 +218,7 @@ function App() {
               </button>
               <button
                 className="delete-btn"
-                onClick={() => deleteEmployee(employee._id)}
+                onClick={() => deleteEmployee(employee.id)}
               >
                 Delete
               </button>
